@@ -1,0 +1,219 @@
+
+                    +------------------+
+                    |     Subject      |
+                    +------------------+
+                    | +addObserver()   |
+                    | +removeObserver()|
+                    | +notifyObservers()|
+                    +------------------+
+                             ^
+                             |
+                             |
+                    +------------------+
+                    |     Product      |
+                    +------------------+
+                    | -observers: List |
+                    | -productName     |
+                    | -inStock         |
+                    +------------------+
+                    | +setStock()      |
+                    | +addObserver()   |
+                    | +removeObserver()|
+                    | +notifyObservers()|
+                    +------------------+
+                             |
+                             |
+                             | 1
+                             |
+                             |
+                             | *
+                     +---------------+
+                     |   Observer    |
+                     +---------------+
+                     | +update()     |
+                     +---------------+
+                          ^      ^
+                          |      |
+              ------------        ------------
+              |                              |
+              |                              |
++--------------------------+   +--------------------------+
+|      EmailObserver       |   |      MobileObserver      |
++--------------------------+   +--------------------------+
+| -email                   |   | -mobile                 |
++--------------------------+   +--------------------------+
+| +update()                |   | +update()               |
++--------------------------+   +--------------------------+
+
+
+
+Subject is the publisher interface.
+Product is the concrete publisher.
+Observer is subscriber interface.
+EmailObserver and MobileObserver are concrete subscribers.
+Product keeps a collection of Observers.
+When stock changes, Product calls notifyObservers().
+Each observer receives the update through polymorphism (update() method).
+
+
+
+Components
+1. Subject (Publisher)
+
+Jiski state change hoti hai.
+
+Example:
+
+Java
+Product
+Show more lines
+
+Ye observers ko notify karega.
+
+
+2. Observer (Subscriber)
+
+Jo update receive karega.
+
+Example:
+
+Java
+Email User
+SMS User
+
+
+------------------------------------
+Step 1: Observer Interface
+public interface Observer {
+
+    void update(String message);
+
+}
+
+
+Step 2: Subject Interface
+public interface Subject {
+
+    void addObserver(Observer observer);
+
+    void removeObserver(Observer observer);
+
+    void notifyObservers();
+
+}
+
+Step 3: Concrete Subject
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Product implements Subject {
+
+    private List<Observer> observers = new ArrayList<>();
+
+    private String productName;
+
+    private boolean inStock;
+
+    public Product(String productName) {
+        this.productName = productName;
+    }
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
+
+        for (Observer observer : observers) {
+            observer.update(productName + " is back in stock!");
+        }
+    }
+
+    public void setStock(boolean stock) {
+
+        this.inStock = stock;
+
+        if (stock) {
+            notifyObservers();
+        }
+    }
+}
+
+
+Step 4: Concrete Observers
+Email Observer
+
+public class EmailObserver implements Observer {
+
+    private String email;
+
+    public EmailObserver(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public void update(String message) {
+
+        System.out.println(
+                "Email sent to "
+                        + email
+                        + " : "
+                        + message);
+    }
+}
+
+
+Mobile Observer
+public class MobileObserver implements Observer {
+
+    private String mobile;
+
+    public MobileObserver(String mobile) {
+        this.mobile = mobile;
+    }
+
+    @Override
+    public void update(String message) {
+
+        System.out.println(
+                "SMS sent to "
+                        + mobile
+                        + " : "
+                        + message);
+    }
+}
+
+Step 5: Main Class
+
+public class Main {
+
+    public static void main(String[] args) {
+
+        Product iphone = new Product("iPhone 17 Pro");
+
+        Observer user1 =
+                new EmailObserver("amit@gmail.com");
+
+        Observer user2 =
+                new MobileObserver("9999999999");
+
+        iphone.addObserver(user1);
+        iphone.addObserver(user2);
+
+        iphone.setStock(true);
+    }
+}
+
+
+Output
+Email sent to amit@gmail.com : iPhone 17 Pro is back in stock!
+
+SMS sent to 9999999999 : iPhone 17 Pro is back in stock!
