@@ -1,0 +1,19 @@
+Singleton
+   │
+   ├── Private constructor
+   │
+   ├── Static instance
+   │
+   └── Static getInstance()
+          │
+          ├── Eager
+          │     └── created immediately
+          │
+          ├── Lazy
+          │     └── created when needed
+          │
+          ├── synchronized method
+          │     └── thread-safe but locks every call
+          │
+          ├── Double-checked locking
+          │     └── lazy + thread-safe 

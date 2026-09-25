@@ -1,0 +1,5 @@
+Prototype Design Pattern
+
+Since you already know Builder, Factory, and Singleton, think of Prototype like this:
+
+Prototype = Create a new object by copying an existing object instead of creating it from scratch.

@@ -1,0 +1,15 @@
+Builder Pattern is a Creational Design Pattern.
+
+Builder Design Pattern is a Creational Design Pattern used to create
+ complex objects step by step instead of calling a large constructor with many parameters.
+
+Builder Object
+ |
+ v
+ set fields one by one
+ | 
+ v 
+ build() 
+ | 
+ v 
+ Person Object

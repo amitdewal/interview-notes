@@ -1,0 +1,6 @@
+
+Factory Pattern is a creational design pattern that encapsulates object creation logic in a factory class 
+and returns the appropriate object based on input, reducing coupling between client code and concrete implementations.
+Factory Pattern is a Creational Design Pattern whose purpose is:
+
+Hide object creation logic and let a factory decide which object to create.
