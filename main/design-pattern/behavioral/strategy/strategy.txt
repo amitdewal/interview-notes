@@ -1,0 +1,113 @@
+                 PaymentStrategy
+                       ↑
+             implements
+              /     |      \
+             /      |       \
+          UPI      Card    PayPal
+           |         |        |
+           └─────────┴────────┘
+                     ↑
+                     |
+              PaymentService
+                 (Context)
+
+Strategy Design Pattern
+
+The simplest way to understand Strategy is:
+
+Strategy Pattern lets you choose/change an algorithm or behavior at runtime without changing the main class.
+
+One problem
+   ↓
+Multiple ways to solve it
+   ↓
+Put each way in a separate class
+   ↓
+Choose the required one
+
+
+1. Simple example — Payment
+
+Suppose your application supports:
+
+Credit Card
+UPI
+PayPal
+
+Without Strategy, you might write:
+
+
+class PaymentService {
+
+    public void pay(String type) {
+
+        if (type.equals("UPI")) {
+            // UPI payment logic
+        } else if (type.equals("CARD")) {
+            // Card payment logic
+        } else if (type.equals("PAYPAL")) {
+            // PayPal payment logic
+        }
+    }
+}
+As payment methods increase, this class becomes full of if-else.
+
+Strategy solves this.
+2. Create Strategy interface
+interface PaymentStrategy {
+
+    void pay(double amount);
+}
+
+3. Create different strategies
+
+class UpiPayment implements PaymentStrategy {
+
+    @Override
+    public void pay(double amount) {
+        System.out.println("Paid ₹" + amount + " using UPI");
+    }
+}
+Credit Card
+class CardPayment implements PaymentStrategy {
+
+    @Override
+    public void pay(double amount) {
+        System.out.println("Paid ₹" + amount + " using Credit Card");
+    }
+}
+
+4. Create Context
+
+The Context is the class that uses the strategy.
+class PaymentService {
+
+    private PaymentStrategy paymentStrategy;
+
+    public PaymentService(PaymentStrategy paymentStrategy) {
+        this.paymentStrategy = paymentStrategy;
+    }
+
+    public void makePayment(double amount) {
+        paymentStrategy.pay(amount);
+    }
+}
+
+The PaymentService doesn't know whether it is UPI, Card, or PayPal.
+
+It only knows:
+
+"I have a strategy that can perform payment."
+
+public class Main {
+
+    public static void main(String[] args) {
+
+        PaymentStrategy strategy = new UpiPayment();
+
+        PaymentService paymentService =
+                new PaymentService(strategy);
+
+        paymentService.makePayment(1000);
+    }
+}

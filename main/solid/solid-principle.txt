@@ -1,0 +1,443 @@
+S = Single Responsibility Principle (SRP)
+
+Rule
+One Class = One Responsibility
+
+
+Bad Example
+@Service
+public class UserService {
+
+    public User getUser(Long id){
+        return userRepository.findById(id).get();
+    }
+
+    public void sendEmail(User user){
+        // email logic
+    }
+
+    public void generatePdf(User user){
+        // pdf logic
+    }
+}
+
+Question:
+
+UserService kis kaam ke liye hai?
+
+User management?
+Email?
+PDF?
+
+Sab kuch kar raha hai.
+
+Violation.
+
+--------------
+
+
+Problem
+Kal email provider change hua.
+
+Tum UserService modify karoge.
+
+PDF change hua.
+
+Fir UserService modify karoge.
+
+1 class multiple reasons se change ho rahi.
+
+Yahi SRP violation hai.
+
+
+Better Design
+@Service
+public class UserService {
+    public User getUser(Long id){
+        return userRepository.findById(id).get();
+    }
+}
+
+@Service
+public class EmailService {
+}
+
+@Service
+public class PdfService {
+}
+
+Ab har class ka ek purpose hai.
+
+
+Real Spring Boot Example
+Controller
+@RestController - Request handle karega.
+
+Service
+@Service - handle Business Logic
+
+
+Repository
+@Repository
+Database
+
+Ye SRP ka direct implementation hai.
+
+Spring khud SRP heavily use karta hai.
+
+
+
+
+
+
+
+
+-------------
+O = Open Closed Principle
+
+Rule
+
+Open for Extension
+
+Closed for Modification
+
+Matlab existing code ko touch mat karo. New feature add karne ke liye new code likho.
+
+Real Scenario
+Payment System
+Initial:
+public class PaymentService {
+
+    public void pay(String type){
+
+        if(type.equals("UPI")){
+            // upi
+        }
+    }
+}
+
+Later:
+Need Card
+if(type.equals("CARD"))
+
+Later:
+Paytm
+if(type.equals("PAYTM"))
+
+Class badi hoti ja rahi hai.
+
+Har payment add karne pe modify.
+
+OCP violation
+
+
+
+
+Better
+
+public interface PaymentStrategy {
+    void pay();
+}
+
+@Component
+public class UpiPayment implements PaymentStrategy{
+}
+
+@Component
+public class CardPayment implements PaymentStrategy{
+}
+
+
+Service:
+public class PaymentService {
+}
+
+
+Kal Paytm aaya:
+
+@Component
+public class PaytmPayment implements PaymentStrategy{
+}
+
+
+Bas new class likhi.
+
+Old code untouched.
+
+OCP achieved.
+
+
+
+
+Spring me kaha hai?
+Spring Dependency Injection.
+
+Tum new bean add karte ho.
+
+Purana framework modify nahi karte.
+
+Example:
+
+@Service
+public class MyEmailSender
+        implements NotificationService{
+}
+
+Spring extension allow karta hai.
+
+Core modification nahi.
+
+
+
+
+
+-------------------------
+L = Liskov Substitution Principle
+Rule
+
+Child object should replace Parent object without breaking code.
+
+Example
+
+Parent
+
+interface Bird{
+    void fly();
+}
+
+Child
+
+class Sparrow implements Bird{
+}
+
+Fine
+
+
+----------------
+Problem
+class Penguin implements Bird{
+    public void fly(){
+        throw new RuntimeException();
+    }
+}
+
+
+Penguin fly hi nahi karta.
+
+LSP violation.
+
+
+
+Better
+
+
+interface Bird{
+}
+
+interface FlyingBird{
+    void fly();
+}
+
+class Sparrow implements FlyingBird{
+}
+
+class Penguin implements Bird{
+}
+
+
+Real Spring Example
+
+Repository
+JpaRepository ki implementation use karo.
+
+Tum expect karte ho:
+save()
+findById()
+delete()
+har implementation same behavior degi.
+Ye LSP hai.
+
+
+
+
+I = Interface Segregation Principle
+Rule
+
+Client should not depend on methods it doesn't use.
+
+Bad Example
+
+public interface Worker {
+
+    void work();
+
+    void eat();
+
+    void sleep();
+
+    void code();
+}
+
+Now Robot:
+
+class Robot implements Worker{
+}
+
+Robot eat nahi karta.
+
+Sleep nahi karta.
+
+Fir bhi implement karega.
+
+Bad design.
+
+
+Better
+
+interface Workable{
+    void work();
+}
+
+interface Eatable{
+    void eat();
+	
+}
+
+interface Sleepable{
+    void sleep();
+}
+
+
+Robot:
+class Robot implements Workable{
+}
+
+Human:
+class Human implements Workable,
+                       Eatable,
+                       Sleepable{
+}
+
+Real Spring Example
+
+
+Spring Security
+UserDetails
+
+sirf security related methods.
+
+Repository alag.
+
+User DTO alag.
+
+Service alag.
+
+Small focused interfaces.
+
+ISP.
+
+
+
+D = Dependency Inversion Principle
+Ye sabse important hai.
+
+Interview me favourite.
+Rule
+
+High Level Module should not depend on Low Level Module.
+
+Both should depend on abstraction.
+
+Bad Example
+
+@Service
+public class OrderService {
+
+    private MySqlRepository repository
+           = new MySqlRepository();
+}
+
+Problem:
+
+Kal MongoDB aa gaya.
+
+OrderService change karna padega.
+
+Tight Coupling.
+
+Better
+public interface OrderRepository{
+void save();
+}
+
+@Repository
+public class MySqlRepository
+       implements OrderRepository{
+}
+
+@Repository
+public class MongoRepository
+      implements OrderRepository{
+}
+
+@Service
+public class OrderService {
+
+    private OrderRepository repository;
+
+    public OrderService(OrderRepository repository){
+        this.repository=repository;
+    }
+}
+
+Now OrderService doesn't care:
+
+MySQL
+Mongo
+Oracle
+
+Anything.
+
+
+
+Spring Boot ka sabse bada magic
+
+Dependency Injection
+
+Java
+@Autowired
+private OrderRepository repository;
+Show more lines
+
+or
+
+Java
+public OrderService(OrderRepository repository)
+Show more lines
+
+Ye pure DIP ka implementation hai.
+
+Actually Spring Framework ka foundation hi DIP hai.
+
+Interview Answer (2 Minutes)
+
+Agar interviewer pooche:
+
+"How does Spring Boot follow SOLID principles?"
+
+Answer:
+
+SRP
+Controller handles request
+Service handles business logic
+Repository handles DB access
+OCP
+New implementation add via interfaces
+Existing code modification minimal
+LSP
+Any bean implementation can replace interface contract
+ISP
+Small focused interfaces like UserDetails, JpaRepository
+DIP
+Dependency Injection
+Beans depend on interfaces, not concrete classes
