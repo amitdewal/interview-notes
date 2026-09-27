@@ -1,0 +1,141 @@
+Q: What happens when a consumer in a group dies?
+"Kafka detects it's gone, triggers a rebalance, and assigns its partitions to the remaining consumers in the group. The new owner starts from the last committed offset of that partition, so no messages are lost. Messages processed but not yet committed may be read again, which is why consumers should handle duplicates."
+
+
+
+Q: You have 3 partitions and 5 consumers in one group. What happens?
+"Only 3 consumers get a partition. The other 2 stay idle. So the number of partitions is the maximum parallelism of a consumer group. If you want more consumers working in parallel, you must increase the partitions."
+
+
+Producer sends messages to a topic
+A topic is split into partitions
+Each message in a partition has an offset (its line number)
+The message key decides which partition it goes to (same key → same partition → order kept)
+In a consumer group, each partition is read by only one consumer
+3 partitions, 3 consumers → 1 each
+4 partitions, 5 consumers → 4 work, 1 sits idle
+4 partitions, 3 consumers → one consumer handles 2 partitions
+Redistributing partitions when a consumer joins or leaves is called a rebalance
+The group's committed offset (bookmark) survives a rebalance, so nothing is lost
+Lag = messages written − messages the group has read
+
+
+
+Here are one-liners for every term we've covered so far.
+
+| Term | One-liner |
+|---|---|
+| **Kafka** | A system that stores messages in order and lets many apps read them, at their own speed. |
+| **Broker** | A Kafka server that stores the messages. |
+| **Topic** | A named category of messages, like `orders`. |
+| **Partition** | A piece of a topic; topics are split so work can happen in parallel. |
+| **Offset** | The line number of a message inside a partition; it never changes. |
+| **Message (record)** | One piece of data sent to Kafka, made of a key and a value. |
+| **Key** | Decides which partition a message goes to; the same key always goes to the same partition. |
+| **Value** | The actual content of the message. |
+| **Producer** | An app that sends messages to a topic. |
+| **Consumer** | An app that reads messages from a topic. |
+| **Consumer group** | A team of consumers sharing one topic's work; each partition is read by only one member. |
+| **Committed offset** | The group's saved bookmark, showing where it finished reading in each partition. |
+| **Log-end offset** | The next offset where a new message will be written in a partition. |
+| **Lag** | How many messages are waiting to be read: log-end offset − committed offset. |
+| **Rebalance** | Kafka redistributing partitions among consumers when one joins or leaves the group. |
+| **Idle consumer** | A consumer with no partition because the group has more consumers than partitions. |
+| **Retention** | How long Kafka keeps messages (7 days by default), even after they're read. |
+| **`auto.offset.reset`** | Where a group with no saved bookmark starts reading: `earliest` (from the start) or `latest` (only new messages). |
+| **Serializer** | Converts Java objects (like a String) into bytes so Kafka can store them. |
+| **Batching** | The producer groups messages by partition and sends them together, to be faster. |
+| **KRaft** | Kafka's built-in way to manage itself, which replaced Zookeeper in Kafka 4. |
+
+**Three golden rules:**
+1. Order is guaranteed **only inside one partition**.
+2. **Maximum parallel consumers in a group = number of partitions.**
+3. Reading a message **does not delete** it.
+
+Say **"consumer"** when you're ready for the next step.
+
+
+Q: Why might a consumer process the same message twice?
+"If it processes a message but crashes before committing the offset, then after restart or rebalance it resumes from the last committed offset and reads that message again. That's why consumers should be idempotent: processing the same message twice should be safe."
+
+Q: How does Kafka detect a dead consumer?
+"Through heartbeats. If the coordinator doesn't get a heartbeat within session.timeout.ms, it removes the consumer and rebalances its partitions to the others. A graceful close() avoids the wait."
+
+
+
+"Kafka consumers give at-least-once delivery by default. If a consumer crashes after processing but before committing, messages get redelivered. So I make the consumer idempotent: each event has a unique ID, and before processing I check whether it's already handled (for example, a unique constraint or a processed-events table in the DB). Duplicates are then safely skipped."
+
+
+
+Compare your two experiments
+	Process → Commit	Commit → Process
+Crash in the gap	Work done, bookmark not saved	Bookmark saved, work not done
+After restart	Same messages again	Messages skipped
+Problem	Duplicate (charged twice)	Lost (never charged / no food)
+Name	At-least-once	At-most-once
+
+
+
+Which one do companies use?
+
+Almost always at-least-once + idempotent consumer:
+
+A lost message is usually impossible to detect or fix later.
+A duplicate can be detected and skipped (check "is order-20 already paid?").
+
+At-most-once is only acceptable when losing a few messages doesn't matter, like page-view counts or sensor readings.
+
+
+Q: At-least-once vs at-most-once?
+"It depends on when you commit the offset. Commit after processing gives at-least-once: a crash causes redelivery,
+ so duplicates are possible. 
+Commit before processing gives at-most-once: a crash can lose messages. In practice we use at-least-once with idempotent consumers, because duplicates can be handled but lost messages can't."
+
+----------------------------------------
+Term	One-liner
+poll()	The consumer asking Kafka "any new messages?", done again and again in a loop.
+Deserializer	Converts bytes from Kafka back into Java objects (like String).
+Auto commit	Kafka saves the bookmark automatically every 5 seconds (enable.auto.commit=true, the default).
+Manual commit	Your code decides when to save the bookmark, using commitSync().
+commitSync()	Saves the bookmark for everything from the last poll and waits for Kafka to confirm.
+Heartbeat	The consumer's regular "I'm alive" signal to Kafka.
+Session timeout	How long Kafka waits without a heartbeat before declaring a consumer dead (45s default).
+Graceful shutdown	Calling consumer.close() so Kafka knows immediately and rebalances fast.
+Duplicate	The same partition + offset processed more than once (same text ≠ duplicate).
+At-least-once	Process, then commit. Nothing is lost, but duplicates are possible.
+At-most-once	Commit, then process. No duplicates, but messages can be lost.
+Exactly-once	Each message has its effect exactly once, using Kafka transactions (advanced).
+Idempotent consumer	Processing the same message twice gives the same result as once (e.g. check "already paid?").
+Queue vs pub-sub	Inside one group, messages are shared (queue). Across groups, every group gets all messages (pub-sub).
+send() is async	send() returns immediately; the result comes later in the callback.
+----------------------------------------
+
+
+"For every partition where that broker was the leader, the controller elects a new leader from the remaining in-sync replicas. The dead broker is removed from the ISR of all its partitions. Producers and consumers automatically discover the new leader and continue. As long as an in-sync replica exists, no committed data is lost."
+
+The summary rule (very popular in interviews)
+
+3 replicas + acks=all + min.insync.replicas=2
+→ Kafka can survive 1 broker failure and keep accepting writes safely.
+→ With 2 brokers down, writes are refused instead of risked.
+
+---------------------------------
+One-liners
+Term	One-liner
+acks	How many replicas must confirm a write before the producer gets "success".
+acks=all	The leader plus all current ISR replicas must have the message.
+min.insync.replicas	The minimum ISR size needed for an acks=all write to be accepted.
+NotEnoughReplicasException	The error when the ISR is smaller than min.insync.replicas.
+Retries	The producer automatically re-sends after temporary errors.
+---------------------------------
+
+
+Q: How do you make sure Kafka doesn't lose messages?
+"Use replication factor 3, acks=all on the producer, and min.insync.replicas=2 on the topic. Then every acknowledged write exists on at least 2 brokers, so we survive one broker failure. If too many brokers are down, the producer gets NotEnoughReplicasException instead of silently losing data. Plus idempotent consumers with commit-after-processing on the consumer side."
+
+Ack = the broker's confirmation to the producer that the message is safely stored in Kafka. acks decides how many replicas must store it before that confirmation is sent.
+
+
+
+Q: How do you handle messages that keep failing in a Kafka consumer?
+"In Spring Kafka, I configure a DefaultErrorHandler with a backoff, for example 3 attempts 1 second apart, for temporary failures. After retries are exhausted, a DeadLetterPublishingRecoverer sends the record to a dead letter topic, with headers like the exception message and original partition and offset. That way the partition isn't blocked forever, nothing is silently lost, and the team can inspect, fix, and replay DLT messages later."
