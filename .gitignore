@@ -1,0 +1,46 @@
+# ---- Build output (Java / Maven / Gradle / Eclipse) ----
+bin/
+**/bin/
+target/
+**/target/
+build/
+**/build/
+out/
+**/out/
+.gradle/
+*.class
+*.jar
+*.war
+*.log
+
+# ---- Eclipse / STS ----
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+.springBeans
+.sts4-cache/
+
+# ---- IntelliJ IDEA ----
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ---- VS Code ----
+.vscode/
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Env / secrets ----
+.env
+*.env
+application-local.properties
+application-local.yml
+
+# ---- Node (if any project uses it) ----
+node_modules/
